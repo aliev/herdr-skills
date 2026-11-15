@@ -15,7 +15,8 @@ Mirrors ~/.config/herdr-app/mods/worktree/main.js: checkouts go to
 <worktrees.directory>/<repo>/<slug(branch)> (settings.json, default ~/.herdr/worktrees);
 an existing branch is checked out, a new one starts from HEAD of --from.
 The new space is left unnamed so the sidebar nests it under its repo.
-Prints one JSON object: {path, branch, created, repo, repo_main, herdr?: <reply>}.
+Prints one JSON object: {path, branch, created, repo, repo_main, space?, herdr?: <reply>};
+`space` is the checkout's space id (new or already open), absent with --no-open/--in-tab.
 """
 import argparse, json, os, re, subprocess, sys, unicodedata
 
@@ -134,9 +135,12 @@ def main():
         ls = json.loads(sh(["herdr-app", "ls"], check=False).stdout or "{}")
         hit = next((s for s in ls.get("spaces", []) if s.get("folder") == path), None)
         if hit and not a.argv:
-            out["herdr"] = herdr("space.select", {"id": hit["id"]}, a.dry_run)
+            out["space"] = hit["id"]
+            out["herdr"] = {"ok": True} if a.no_focus else herdr("space.select", {"id": hit["id"]}, a.dry_run)
         else:
             out["herdr"] = herdr("space.new", payload, a.dry_run)
+            if out["herdr"].get("space"):
+                out["space"] = out["herdr"]["space"]
     print(json.dumps(out, indent=1))
     if "error" in out["herdr"]:
         sys.exit(1)

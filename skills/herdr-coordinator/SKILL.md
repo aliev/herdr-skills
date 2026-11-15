@@ -37,11 +37,11 @@ hc get "$me" | jq '{harness: .foreground.argv[0], cwd: (.foreground.cwd // .cwd)
 Needs a current repo (step 1). Then:
 
 1. **Branch:** propose a short kebab name from the task (`feat/` `fix/` `docs/` `chore/` + slug), use the user's if given. Don't ask unless the task is too vague to name.
-2. **Worktree:** `python3 <herdr-app dir>/scripts/worktree.py <branch> --from <repo_main> --no-open` → `path`. Existing checkout of that branch is reused.
+2. **Worktree:** `python3 <herdr-app dir>/scripts/worktree.py <branch> --from <repo_main> --no-focus` → `path` and `space` (the worktree's own unnamed space, which the sidebar nests under the repo's space). Existing checkout of that branch, and its open space, are reused. Never name that space — a named space doesn't nest. Don't use `--no-open`: with no space of its own the worktree never shows under the repo.
 3. **Worker** — via the hc templates `worker-claude` / `worker-codex` (`~/.config/herdr-core/templates/`; they carry the worker rules, the report-back command and codex's sandbox flags):
    ```sh
    hc run --bg --outlive-parent --name <slug> --cwd <path> \
-     --label herdr.space=<space> --label coord.repo=<repo> --label coord.task=<branch> \
+     --label herdr.space=<worktree space> --label coord.repo=<repo> --label coord.task=<branch> \
      worker-<harness> "<task text verbatim>
    Coordinator: <me>. Your name: <slug>."
    ```
@@ -49,7 +49,7 @@ Needs a current repo (step 1). Then:
    - `<slug>`: 1–32 chars `a-z0-9-_` (branch with `/`→`-`, lowercased).
    - Another harness without a template → ask the user, or write `~/.config/herdr-core/templates/worker-<name>.md` by copying `worker-claude.md` and changing `command:` (interactive mode only — never `claude -p`, `codex exec`).
    - Never launch workers with `worktree.py --argv` or `herdr-app do space.new/tab.new --argv` — those terminals are not your children, so their notes never reach you.
-   - `--outlive-parent`: workers survive a coordinator restart. `herdr.space` makes it a visible tab in the repo space.
+   - `--outlive-parent`: workers survive a coordinator restart. `herdr.space=<worktree space>` makes it a tab in the worktree's space (nested under the repo in the sidebar), not in the repo's space.
 4. **Confirm start:** check `first_message.sent` in the reply.
    - `true` → started.
    - `false` (reason mentions a dialog) → a new folder makes the agent ask "trust this folder?". `hc read <slug> --lines 30`, then: claude ("Yes, I trust this folder" is 2nd) → `hc keys <slug> down enter`; codex ("1. Trust and continue" selected) → `hc keys <slug> enter`. `hc wait <slug> --timeout 40` (returns `idle` = ready), then send the template body + task once:
@@ -94,7 +94,7 @@ If `hc` is missing, errors, or doesn't answer within 30 s (give the shell tool a
 ## 6. Cleanup (only when the user asks)
 
 1. `hc kill <t>; hc rm <t>` for the worker.
-2. Remove the worktree per the herdr-app skill: `git -C <path> status --porcelain` first; uncommitted work → ask. Then `git -C <repo_main> worktree remove <path>`. The branch stays.
+2. Remove the worktree per the herdr-app skill: `git -C <path> status --porcelain` first; uncommitted work → ask. Then close its space (`herdr-app do space.close --id <worktree space> --confirmed true`) and `git -C <repo_main> worktree remove <path>`. The branch stays.
 
 ## Red flags — stop
 

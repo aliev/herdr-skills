@@ -72,7 +72,7 @@ python3 <skill dir>/scripts/worktree.py feat/login --in-tab       # tab in MY sp
 python3 <skill dir>/scripts/worktree.py feat/login --from ~/code/app --no-focus --dry-run
 ```
 
-Prints `{path, branch, created, herdr}`. New branches start from the source checkout's HEAD; existing branches are checked out. Do not name the space (`--name`) — naming breaks nesting under the repo. Not in a git repo → the script errors; tell the user.
+Prints `{path, branch, created, repo, repo_main, space, herdr}`; `space` is the checkout's space id (new, or the one already open — reused without switching to it under `--no-focus`). New branches start from the source checkout's HEAD; existing branches are checked out. Do not name the space (`--name`) — naming breaks nesting under the repo. Not in a git repo → the script errors; tell the user.
 
 Remove a worktree only when asked: close its space first (`space.close --confirmed true`), then `git -C <main repo> worktree remove <path>`; check `git status` there first and never `--force` uncommitted work without consent.
 
