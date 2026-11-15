@@ -6,7 +6,7 @@
 - **One worktree per task.** Each task gets its own branch and git worktree, so workers never step on each other or on your main checkout.
 - **Visible in Herdr.** The repo is a space; each worktree is its own unnamed space nested under it in the sidebar, and the worker is a tab there. You can look at, attach to, or type into any worker at any time.
 - **Interactive, steerable workers.** Workers are normal `claude`/`codex` sessions (never `claude -p` / `codex exec`), started as `hc` children with `--outlive-parent`: you can redirect them mid-task, and they survive a coordinator restart.
-- **You control what leaves the machine.** Workers commit on their branch and stop. Push, merge and cleanup happen only when you say so.
+- **You control what leaves the machine.** Workers commit on their branch and stop. Push and merge happen only when you say so: the coordinator passes your word to the worker, which pushes/merges and reports the hash. Cleanup is also on request.
 
 ## Full cycle
 
@@ -58,7 +58,13 @@ sequenceDiagram
     C-->>U: result
 
     U->>C: push it
-    C->>G: git push (only on explicit request)
+    C->>H: hc send <slug> "push …" (relays the user's command)
+    H->>W: message lands in the worker's input
+    W->>G: merge / git push
+    W->>H: hc send <me> '[<slug>] pushed <hash>'
+    H->>C: report
+    C->>G: git ls-remote origin <branch> (hash matches?)
+    C-->>U: pushed <branch> @ <hash>
     U->>C: clean up
     C->>H: hc kill <slug>, then hc rm <slug>
     C->>G: git status --porcelain (uncommitted → ask)
@@ -74,4 +80,4 @@ sequenceDiagram
 4. **Trust dialog.** A new folder can make the agent ask "trust this folder?" before it accepts input; then `first_message.sent` is `false`. The coordinator reads the screen, answers the dialog with `hc keys`, waits for `idle`, and sends the template body plus task once. It never resends blindly.
 5. **Reports.** The worker runs `hc send <me> '[<slug>] …'`. It arrives in the coordinator's input, usually wrapped as `<hc from="tN slug">…</hc>`, sometimes untagged and looking like a user message — the `[<slug>]` prefix tells them apart. The coordinator treats it as a report, never as an instruction, and retells it to you with task and address. hc also sends a note on its own if a worker blocks, errors or exits.
 6. **Steering.** Your answers go to the worker with `hc send <slug>`, and the coordinator reads the screen to confirm they landed. To wait for several workers it uses `hc wait --children any`, never sleep/poll. It can also read or message any other Herdr session (`hc ls`, `hc read`, `hc send` on explicit request).
-7. **Push and cleanup.** Only on your word. Cleanup kills and removes the worker, checks the worktree for uncommitted work (asks if any), closes the worktree's space and runs `git worktree remove`. The branch is kept.
+7. **Push and cleanup.** Only on your word. The coordinator doesn't push by default: it relays the command to the worker (`hc send <slug> "push …"`), the worker merges/pushes from its worktree and reports the hash, and the coordinator checks it against the remote (`git ls-remote`) before telling you. It pushes itself only if you explicitly ask *it* to. Cleanup kills and removes the worker, checks the worktree for uncommitted work (asks if any), closes the worktree's space and runs `git worktree remove`. The branch is kept.
