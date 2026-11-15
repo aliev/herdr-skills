@@ -43,7 +43,7 @@ same repo, via codex: update the README
 what's going on in go-sqlite3?
 ```
 
-Workers run as `hc` children in a tab of the repo's space, survive a coordinator restart (`--outlive-parent`), and report back with `hc send <coordinator> '[<name>] …'`.
+Workers run as `hc` children in a tab of their worktree's space (nested under the repo's space), survive a coordinator restart (`--outlive-parent`), and report back with `hc send <coordinator> '[<name>] …'`. The full cycle, with a sequence diagram: [docs/how-it-works.md](docs/how-it-works.md).
 
 ### Codex notes
 
@@ -57,6 +57,7 @@ Workers run as `hc` children in a tab of the repo's space, survive a coordinator
 skills/herdr-app/            SKILL.md, scripts/worktree.py
 skills/herdr-coordinator/    SKILL.md, scripts/repo-space.py, scripts/install-templates.sh, templates/worker-*.md
 .claude-plugin/              plugin.json, marketplace.json
+docs/how-it-works.md         idea + sequence diagram of the coordinator/worker cycle
 ```
 
 ## License
