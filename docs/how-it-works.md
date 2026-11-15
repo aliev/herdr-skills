@@ -6,7 +6,7 @@
 - **One worktree per task.** Each task gets its own branch and git worktree, so workers never step on each other or on your main checkout.
 - **Visible in Herdr.** The repo is a space; each worktree is its own unnamed space nested under it in the sidebar, and the worker is a tab there. You can look at, attach to, or type into any worker at any time.
 - **Interactive, steerable workers.** Workers are normal `claude`/`codex` sessions (never `claude -p` / `codex exec`), started as `hc` children with `--outlive-parent`: you can redirect them mid-task, and they survive a coordinator restart.
-- **English to workers, your language to you.** You talk to the coordinator in whatever language is comfortable; it never leaks into workers. The coordinator is the translation boundary in both directions: your task and answers go to workers as faithful English (code, paths and names verbatim), and worker reports come back to you in your language.
+- **Language boundary.** You talk to the coordinator in your language; it writes to workers in plain, natural English (code, paths and names verbatim) and tells you their reports in your language.
 - **Several coordinators at once.** Each worker carries `coord.by=<coordinator address>`, so every coordinator lists, relays to and steers only its own workers, even on the same repo.
 - **You control what leaves the machine.** Workers commit on their branch and stop. Push and merge happen only when you say so: the coordinator passes your word to the worker, which pushes/merges and reports the hash. Cleanup is also on request.
 
