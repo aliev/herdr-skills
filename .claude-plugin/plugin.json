@@ -1,0 +1,9 @@
+{
+  "name": "herdr",
+  "description": "Drive the Herdr desktop app and herdr-core (hc) from an agent, and run one coordinator chat that dispatches tasks to claude/codex workers in git worktrees.",
+  "version": "0.1.0",
+  "author": { "name": "Ali Aliyev", "url": "https://github.com/aliev" },
+  "repository": "https://github.com/aliev/herdr-skills",
+  "license": "MIT",
+  "keywords": ["herdr", "herdr-core", "hc", "worktree", "coordinator", "agents"]
+}

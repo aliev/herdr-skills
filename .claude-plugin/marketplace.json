@@ -1,0 +1,15 @@
+{
+  "name": "herdr-skills",
+  "description": "Agent skills for the Herdr desktop app and herdr-core",
+  "owner": { "name": "Ali Aliyev", "url": "https://github.com/aliev" },
+  "plugins": [
+    {
+      "name": "herdr",
+      "description": "herdr-app + herdr-coordinator skills",
+      "source": "./",
+      "version": "0.1.0",
+      "category": "productivity",
+      "tags": ["herdr", "agents", "worktree"]
+    }
+  ]
+}
