@@ -13,6 +13,8 @@ The task says whether the repo is public. Decide once what is public:
 
 Public places get nothing internal: no customer names, internal links, tracker ids or links, internal branch names, still-open risks of a security fix, screenshots of internal tools or customer data. Internal detail goes only to an internal tracker; if there is none, send it to the coordinator. Never secrets or credentials anywhere.
 
+**No references to other repos in public text.** Never write an issue, PR or commit of another repo as `owner/repo#N`, a URL or a SHA in a public place, least of all a private or company repo: GitHub shows its title here and adds a "mentioned this" backlink on the target's timeline. Describe it instead ("a real merged PR", "the upstream fix"). Never test or demo a tool against a real company PR in public text. References to the same repo (`#N`, `Fixes #N`) are fine.
+
 ## Open the PR
 
 - Push: `git push -u origin <branch>` (the branch was created without upstream).
