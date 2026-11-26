@@ -26,7 +26,7 @@ Sections, in this order, each a few short lines:
 7. `## Still open`: risks, things this fix does not cover.
 8. `## Decision needed`: the question the person must answer, with your recommendation.
 
-**Plain language.** Ordinary words. Explain by what happens, not by the name of a pattern ("the server answers 'already done' instead of charging again", not "idempotent retries"). Short sentences. No terms you made up. Code names only where the reader needs them to find something. If the user has global instructions (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`), read their style rules and follow them; never copy them into the repo.
+**Plain language.** Follow the writing rules file the task gives (Simplified Technical English). Also: ordinary words. Explain by what happens, not by the name of a pattern ("the server answers 'already done' instead of charging again", not "idempotent retries"). Short sentences. No terms you made up. Code names only where the reader needs them to find something. If the user has global instructions (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`), read their style rules and follow them; never copy them into the repo.
 
 **Text diagrams** (helix shows text, not Mermaid), each in a ` ```text ` block: fixed width, at most 100 columns, at most 6 participants and 10 messages each. One column per participant, `--->` for a call, `<- - -` for an answer, the label above its arrow:
 

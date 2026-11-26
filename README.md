@@ -43,7 +43,7 @@ same repo, via codex: update the README
 what's going on in go-sqlite3?
 ```
 
-Workers run as `hc` children in a tab of their worktree's space (nested under the repo's space), survive a coordinator restart (`--outlive-parent`), and report back with `hc send <coordinator> '[<name>] …'`. A task can be an issue link (Linear, GitHub Issues, Jira, …). A worker that opens a PR runs it to the end (CI → review → merge → issue Done), woken by `scripts/pr-watch.py` instead of polling; it merges only on your go. Before writing code a worker explains its plan in plain words (`EXPLAIN.md` with Before/After diagrams, opened for you in a helix tab) and waits for your decision. Claude workers start with `claude --chrome` (Claude in Chrome), e.g. to put screenshots in a PR body. The full cycle, with a sequence diagram: [docs/how-it-works.md](docs/how-it-works.md).
+Workers run as `hc` children in a tab of their worktree's space (nested under the repo's space), survive a coordinator restart (`--outlive-parent`), and report back with `hc send <coordinator> '[<name>] …'`. A task can be an issue link (Linear, GitHub Issues, Jira, …). A worker that opens a PR runs it to the end (CI → review → merge → issue Done), woken by `scripts/pr-watch.py` instead of polling; it merges only on your go. All agent-written English (reports, plans, commits, PR and tracker text, instructions to workers) follows Simplified Technical English (`writing-rules.md`). Before writing code a worker explains its plan in plain words (`EXPLAIN.md` with Before/After diagrams, opened for you in a helix tab) and waits for your decision. Claude workers start with `claude --chrome` (Claude in Chrome), e.g. to put screenshots in a PR body. The full cycle, with a sequence diagram: [docs/how-it-works.md](docs/how-it-works.md).
 
 ### Codex notes
 
@@ -55,7 +55,7 @@ Workers run as `hc` children in a tab of their worktree's space (nested under th
 
 ```text
 skills/herdr-app/            SKILL.md, scripts/worktree.py
-skills/herdr-coordinator/    SKILL.md, worker-explain.md / worker-pr.md (worker rules), templates/worker-*.md,
+skills/herdr-coordinator/    SKILL.md, writing-rules.md / worker-explain.md / worker-pr.md (worker rules), templates/worker-*.md,
                              scripts/repo-space.py, workers.py, pr-watch.py, install-templates.sh
 .claude-plugin/              plugin.json, marketplace.json
 docs/how-it-works.md         idea + sequence diagram of the coordinator/worker cycle

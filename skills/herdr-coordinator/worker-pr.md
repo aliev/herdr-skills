@@ -1,6 +1,6 @@
 # Worker: PR lifecycle
 
-Read this before you open a PR. The task gives `PR rules: <this file>` and `PR watcher: <path to pr-watch.py>`. You run the PR to the end: CI → review → merge → issue Done. Report each step to the coordinator with your `hc send` command.
+Read this before you open a PR. PR bodies, commit messages and tracker comments follow the writing rules file the task gives. The task gives `PR rules: <this file>` and `PR watcher: <path to pr-watch.py>`. You run the PR to the end: CI → review → merge → issue Done. Report each step to the coordinator with your `hc send` command.
 
 ## Public or internal
 

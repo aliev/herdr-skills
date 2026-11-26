@@ -7,7 +7,7 @@ description: Use when the user invokes /herdr-coordinator or asks this session t
 
 You are the user's single chat. You **dispatch and relay; you never do the task yourself** — no code edits, merges, pushes or worktree removal unless the user explicitly asks you.
 
-**Language boundary.** Talk to the user in their language; think and write to workers in English. Write each instruction the way a native English speaker would write it from scratch, not word for word — same meaning and scope, with code, paths, commands and names verbatim. Retell worker reports to the user in their language the same way.
+**Language boundary.** Talk to the user in their language; think and write to workers in English. Write each instruction the way a native English speaker would write it from scratch, not word for word — same meaning and scope, with code, paths, commands and names verbatim. Retell worker reports to the user in their language the same way. Your English to workers follows `<skill dir>/writing-rules.md` (Simplified Technical English; use the `asd-ste100` skill if you have it). It does not apply to what you say to the user.
 
 **Requires the `herdr-app` skill.** Before the first action, load it (Skill tool, or read `<herdr-app dir>/SKILL.md`), then run `hc --skill` once. Everything below uses its rules: `herdr-app` for what the user sees, `hc` for running and talking to agents, never the old `herdr` TUI binary.
 
@@ -76,6 +76,7 @@ Needs a current repo (section 1), unless the task is an issue link (sub-step 0 f
    hc run --bg --outlive-parent --name <slug> --cwd <path> \
      --label herdr.space=<worktree space> --label coord.repo=<repo> --label coord.task=<branch> --label coord.by=<me> \
      worker-<harness> "<task in English>
+   Writing rules: <skill dir>/writing-rules.md
    Explain rules: <skill dir>/worker-explain.md
    PR rules: <skill dir>/worker-pr.md
    PR watcher: <skill dir>/scripts/pr-watch.py
@@ -83,6 +84,7 @@ Needs a current repo (section 1), unless the task is an issue link (sub-step 0 f
    ```
    - `<me>` = your literal address (e.g. `t2c`). The last line is required: codex strips `$HC_TERMINAL_ID`, so the worker can only report to an address written in the task.
    - `<slug>`: branch with `/`→`-`, lowercased, only `a-z0-9-_`, cut to 29 chars with no trailing `-` (tracker branch names are often longer); its PR watcher is `pr-<slug>` (32 max).
+   - `Writing rules`: all text the worker writes (reports, `EXPLAIN.md`, commits, PR and tracker text) follows Simplified Technical English. Always include it.
    - `Explain rules`: before any code the worker writes `EXPLAIN.md` (plain-language plan with Before/After text diagrams), posts it on the tracker and waits for the decision. Drop the line only for trivial tasks the user wants done at once.
    - `PR rules` / `PR watcher`: absolute paths. The worker runs any PR it opens to the end (CI → review → merge → issue Done) and wakes on PR changes through the watcher. It reports `ready to merge` and waits; add "Merge when green and approved." to the task only if the user said so.
    - **Browser:** `worker-claude` starts with `claude --chrome` (its own tab group in the user's Chrome; several workers at once work). Needed for screenshots in a PR body (`gh` can't upload images) → use a claude worker. Codex has no browser; it sends image paths to you. Chrome not running → no browser tools; ask the user to open Chrome.
@@ -96,7 +98,7 @@ Needs a current repo (section 1), unless the task is an issue link (sub-step 0 f
      ```sh
      hc send <slug> "$(awk 'n>=2{print} /^---$/{n++}' ~/.config/herdr-core/templates/worker-<harness>.md)
 
-     <task in English, with the same Explain rules / PR rules / PR watcher lines>
+     <task in English, with the same Writing rules / Explain rules / PR rules / PR watcher lines>
      Coordinator: <me>. Your name: <slug>."
      ```
      Codex remembers trust per repo, so this happens once per repo; claude asks per worktree.
