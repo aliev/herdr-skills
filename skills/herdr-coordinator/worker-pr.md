@@ -24,7 +24,7 @@ Public places get nothing internal: no customer names, internal links, tracker i
   - **GitHub Issues:** `Fixes #N` in the body (another repo: `Fixes owner/repo#N`). It closes the issue on merge; GitHub Issues has no status to move.
 - Images in the PR body (screenshots): `gh` can't upload them. A claude worker with the browser: open the PR in Chrome, edit the description, attach the file through the upload field, save. No browser (codex): send the image path to the coordinator. Public repo: check each image for internal data first.
 - Issue status: **In Review** (tracker's equivalent) once the PR is open, if the tracker has statuses.
-- **Tracker comment** on the issue (MCP tool or `gh issue comment`): cause found, what changed, behavior change, tests, PR link. Detail follows the table above. No tracker tool → send the text to the coordinator; it posts it.
+- **Tracker comment** on the issue (MCP tool or `gh issue comment`): cause found, what changed, behavior change, tests, PR link. Approach changed since the plan → update `EXPLAIN.md` and put its Mermaid diagrams here and in the PR body (see the explain rules). Detail follows the table above. No tracker tool → send the text to the coordinator; it posts it.
 
 ## Keep up with the base
 
