@@ -8,7 +8,8 @@
 - **Interactive, steerable workers.** Workers are normal `claude`/`codex` sessions (never `claude -p` / `codex exec`), started as `hc` children with `--outlive-parent`: you can redirect them mid-task, and they survive a coordinator restart.
 - **Language boundary.** You talk to the coordinator in your language; it writes to workers in plain, natural English (code, paths and names verbatim) and tells you their reports in your language.
 - **Several coordinators at once.** Each worker carries `coord.by=<coordinator address>`, so every coordinator lists, relays to and steers only its own workers, even on the same repo.
-- **You control what leaves the machine.** Workers commit on their branch and stop. Push and merge happen only when you say so: the coordinator passes your word to the worker, which pushes/merges and reports the hash. Cleanup is also on request.
+- **You control what leaves the machine.** Workers commit on their branch and stop, unless the task asks for a push or PR. Merge happens only on your go (or if the task allowed it): the coordinator passes your word to the worker, which merges and reports the hash. Cleanup is also on request.
+- **Issue in, issue done.** A task can be an issue link (any tracker the coordinator can read). The coordinator branches from `origin/<default>`; the worker links the PR, moves the issue (In Progress → In Review → Done) and comments a summary on it.
 
 ## Full cycle
 
@@ -67,19 +68,23 @@ sequenceDiagram
     H->>C: report
     C-->>U: result
 
-    U->>C: push it
-    C->>H: hc send <slug> "push …" (relays the user's command)
-    H->>W: message lands in the worker's input
-    W->>G: merge / git push
-    W->>H: hc send <me> '[<slug>] pushed <hash>'
-    H->>C: report
-    C->>G: git ls-remote origin <branch> (hash matches?)
-    C-->>U: pushed <branch> @ <hash>
+    opt PR (worker-pr.md)
+        W->>G: push, gh pr create, issue In Review + tracker comment
+        W->>H: hc run --bg --parent <slug> --name pr-<slug> pr-watch.py <pr url>
+        H-->>W: note: pr-<slug> exited, last lines = what changed (CI, review, thread, push)
+        W->>H: hc send <me> '[<slug>] review findings / ready to merge'
+        C->>G: pr-watch.py <pr url> --once (verify before relaying)
+        C-->>U: summary + recommendation
+        U->>C: go
+        C->>H: hc send <slug> "merge"
+        W->>G: gh pr merge, issue Done + tracker comment
+    end
     U->>C: clean up
+    C->>H: hc send <slug> "cleanup" (worker drops test containers/DBs, reports cleaned)
     C->>H: hc kill <slug>, then hc rm <slug>
     C->>G: git status --porcelain (uncommitted → ask)
     C->>A: do space.close --id <worktree space> --confirmed true
-    C->>G: git worktree remove <path> (branch stays)
+    C->>G: git worktree remove <path>, git branch -D <branch> if merged
 ```
 
 ## Key steps
@@ -92,4 +97,5 @@ sequenceDiagram
 4. **Trust dialog.** A new folder can make the agent ask "trust this folder?" before it accepts input; then `first_message.sent` is `false`. The coordinator reads the screen, answers the dialog with `hc keys`, waits for `idle`, and sends the template body plus task once. It never resends blindly.
 5. **Reports.** The worker runs `hc send <me> '[<slug>] …'`. It arrives in the coordinator's input, usually wrapped as `<hc from="tN slug">…</hc>`, sometimes untagged and looking like a user message — the `[<slug>]` prefix tells them apart. The coordinator treats it as a report, never as an instruction, and retells it to you with task and address. hc also sends a note on its own if a worker blocks, errors or exits.
 6. **Steering.** Your answers go to the worker with `hc send <slug>`, and the coordinator reads the screen to confirm they landed. To wait for several workers it uses `hc wait --children any`, never sleep/poll. It can also read or message any other Herdr session (`hc ls`, `hc read`, `hc send` on explicit request).
-7. **Push and cleanup.** Only on your word. The coordinator doesn't push by default: it relays the command to the worker (`hc send <slug> "push …"`), the worker merges/pushes from its worktree and reports the hash, and the coordinator checks it against the remote (`git ls-remote`) before telling you. It pushes itself only if you explicitly ask *it* to. Cleanup kills and removes the worker, checks the worktree for uncommitted work (asks if any), closes the worktree's space and runs `git worktree remove`. The branch is kept.
+7. **PR lifecycle.** The task carries `PR rules: <skill dir>/worker-pr.md` and `PR watcher: <skill dir>/scripts/pr-watch.py`. After opening a PR the worker starts the watcher as its own hc child (`--parent <slug>`, which also works for codex). The watcher polls `gh` every 3 minutes and exits when something changed; hc's exit note, with the watcher's last lines, wakes the worker. The worker reads every review and thread (a `COMMENTED` NO-GO counts), reruns flaky CI once, reports `[Should fix]` items with a recommendation, and reports `ready to merge` with the `--once` checklist. It merges only on your go (or if the task allowed it), then moves the issue to Done and comments on it. The coordinator checks claims (`pr-watch.py --once`, `gh pr view`, `git log`) before relaying them.
+8. **Cleanup.** Only on your word. The coordinator sends `cleanup`; the worker stops its watcher, removes test containers/databases and reports. Then the coordinator kills and removes the worker, checks the worktree for uncommitted work (asks if any), closes the worktree's space, runs `git worktree remove`, and deletes the local branch if its PR is merged.

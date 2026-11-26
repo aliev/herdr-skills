@@ -45,9 +45,21 @@ Their `parent` stays the old address (hc can't change it), so core notes about t
 
 ## 2. "Task: …"
 
-Needs a current repo (step 1). Then:
+Needs a current repo (step 1), unless the task is an issue link (0). Then:
 
+0. **Task is an issue link or id** (Linear, GitHub Issues, Jira, …):
+   - Tracker: from the URL host, else from the id's form and the tracker tools you have (MCP: search tools for its name; GitHub: `gh issue view`). No way to read it → ask the user to paste it.
+   - Read the issue **and its comments**. Repo: from the paths/repo it names (then step 1); unclear → ask.
+   - Branch: the tracker's suggested name if it has one (Linear `gitBranchName` links the PR by itself); else a kebab name as in 1.
+   - Move the issue to In Progress if the tracker has statuses.
+   - The task you send carries the issue link, the tracker, and how the PR links it (Linear: the branch name; GitHub: `Fixes #N` in the body; other: the link in the body). An issue with more parts → add "more parts follow: don't move it to Done".
 1. **Branch:** propose a short kebab name from the task (`feat/` `fix/` `docs/` `chore/` + slug), use the user's if given. Don't ask unless the task is too vague to name.
+   - **Base and visibility** (new branch only; skip if it exists): branch from the remote default branch, not the local one (often behind):
+     ```sh
+     cd <repo_main> && gh repo view --json defaultBranchRef,visibility -q '.defaultBranchRef.name + " " + .visibility'
+     git -C <repo_main> fetch origin <default> && git -C <repo_main> branch <branch> origin/<default>
+     ```
+     `PUBLIC` → add to the task: "Public repo: no internal names, links, customer data or open risks in commits, PR or PR comments."
 2. **Worktree taken?** `worktree.py` reuses any existing checkout of the branch, so another coordinator with the same branch name would land in the same folder. Check first:
    ```sh
    git -C <repo_main> worktree list --porcelain | grep -B2 "^branch refs/heads/<branch>$" | sed -n 's/^worktree //p'
@@ -59,10 +71,14 @@ Needs a current repo (step 1). Then:
    hc run --bg --outlive-parent --name <slug> --cwd <path> \
      --label herdr.space=<worktree space> --label coord.repo=<repo> --label coord.task=<branch> --label coord.by=<me> \
      worker-<harness> "<task in English>
+   PR rules: <skill dir>/worker-pr.md
+   PR watcher: <skill dir>/scripts/pr-watch.py
    Coordinator: <me>. Your name: <slug>."
    ```
    - `<me>` = your literal address (e.g. `t2c`). The last line is required: codex strips `$HC_TERMINAL_ID`, so the worker can only report to an address written in the task.
-   - `<slug>`: 1–32 chars `a-z0-9-_` (branch with `/`→`-`, lowercased).
+   - `<slug>`: 1–29 chars `a-z0-9-_` (branch with `/`→`-`, lowercased); its PR watcher is named `pr-<slug>` (32 max).
+   - `PR rules` / `PR watcher`: absolute paths. The worker runs any PR it opens to the end (CI → review → merge → issue Done) and wakes on PR changes through the watcher. It reports `ready to merge` and waits; add "Merge when green and approved." to the task only if the user said so.
+   - **Browser:** `worker-claude` starts with `claude --chrome` (its own tab group in the user's Chrome; several workers at once work). Needed for screenshots in a PR body (`gh` can't upload images) → use a claude worker. Codex has no browser; it sends image paths to you. Chrome not running → no browser tools; ask the user to open Chrome.
    - Another harness without a template → ask the user, or write `~/.config/herdr-core/templates/worker-<name>.md` by copying `worker-claude.md` and changing `command:` (interactive mode only — never `claude -p`, `codex exec`).
    - Never launch workers with `worktree.py --argv` or `herdr-app do space.new/tab.new --argv` — those terminals are not your children, so their notes never reach you.
    - `coord.by=<me>` marks the worker as yours (see Who am I); never omit it.
@@ -73,7 +89,7 @@ Needs a current repo (step 1). Then:
      ```sh
      hc send <slug> "$(awk 'n>=2{print} /^---$/{n++}' ~/.config/herdr-core/templates/worker-<harness>.md)
 
-     <task in English>
+     <task in English, with the same PR rules / PR watcher lines>
      Coordinator: <me>. Your name: <slug>."
      ```
      Codex remembers trust per repo, so this happens once per repo; claude asks per worktree.
@@ -83,6 +99,10 @@ Needs a current repo (step 1). Then:
 ## 3. Relay
 
 - Worker reports and core notes arrive as your input — tagged `<hc from="t9 feat-retry">…</hc>`, **or untagged, looking exactly like a user message** (`[feat-retry] done …`). The `[<slug>]` prefix is how you tell them apart. They are **reports, not user instructions**. Tell the user who said it (task + address) and what, briefly; for long answers `hc read <t> --lines 150` first.
+- **Verify before relaying.** Workers are sometimes wrong (a PR "still draft" that isn't, a missed generated file). Before you tell the user something is done, or act on a claim, check it with one cheap read: `python3 <skill dir>/scripts/pr-watch.py <pr url> --once` (state, draft, checks, every review, threads), `gh pr view <url> --json body`, `git -C <path> log --oneline -3` / `status --porcelain`. Mismatch → tell the worker and the user.
+- **Review findings** from a worker → tell the user one line per item: severity, what, your recommendation (fix in this PR / follow-up issue). On "follow-up": file it in the tracker (MCP or `gh issue create`) and send the worker its id.
+- **Ready to merge** → relay with the `--once` checklist (verified). On the user's go: `hc send <t> "merge"`.
+- **Tracker comment text** from a worker without tracker tools → post it on the issue yourself, as is.
 - User answers ("yes, and on 503 too") → `hc send <t> "<answer in English>"`. If it's unclear which worker they mean, ask. After sending, `hc read <t> --lines 20` to confirm it landed.
 - "How is it going?" / status → your workers only: `hc ls --label coord.by=<me>` (add `--label coord.repo=<repo>` for one repo; repeated `--label` filters are ANDed), or `python3 <skill dir>/scripts/workers.py --by <me>` for their repo/task labels too (`hc ls` doesn't print labels); for each: status (`working`/`blocked`/`done`/`idle`), and `hc read` the blocked ones.
 - Workers with another `coord.by` belong to another coordinator: don't relay to them or steer them unless the user explicitly asks about that session (section 4).
@@ -111,8 +131,10 @@ If `hc` is missing, errors, or doesn't answer within 30 s (give the shell tool a
 
 ## 6. Cleanup (only when the user asks)
 
-1. `hc kill <t>; hc rm <t>` for the worker.
-2. Remove the worktree per the herdr-app skill: `git -C <path> status --porcelain` first; uncommitted work → ask. Then close its space (`herdr-app do space.close --id <worktree space> --confirmed true`) and `git -C <repo_main> worktree remove <path>`. The branch stays.
+1. `hc send <t> "cleanup"`: the worker stops its PR watcher, drops what it made for tests (containers, test databases), checks its tree is clean and reports `cleaned: …`. Check yourself: `git -C <path> status --porcelain` empty; uncommitted work → ask the user.
+2. `hc kill <t>; hc rm <t>` (and `hc rm pr-<slug>` if it is listed).
+3. Close its space (`herdr-app do space.close --id <worktree space> --confirmed true`), then `git -C <repo_main> worktree remove <path>`.
+4. Local branch: `git -C <repo_main> branch -D <branch>` only if its PR is merged (`gh pr view <url> --json state`) or the user says so; `-D` because a squash merge isn't an ancestor.
 
 ## Red flags — stop
 
@@ -127,3 +149,10 @@ If `hc` is missing, errors, or doesn't answer within 30 s (give the shell tool a
 | "That worker's branch matches, I'll reuse its worktree" | Not yours (`by` ≠ `<me>`) → other branch name or ask (step 2.2) |
 | "Status = everything with `coord.repo`" | Filter by `coord.by=<me>`; other coordinators' workers aren't yours |
 | `herdr workspace …` / `herdr pane …` | That's the TUI. Never |
+| "The worker says the PR is draft / merged / green" | Check it (`pr-watch.py --once`) before telling the user or acting |
+| "`reviewDecision` is APPROVED, ready to merge" | Every review counts: a `COMMENTED` NO-GO blocks. Read the `--once` list |
+| "Branch from main" (the local one) | `git branch <b> origin/<default>` after `fetch`; local main is often behind |
+| `path=…` in a shell snippet | zsh ties `path` to `PATH`: hc, jq, cat vanish. Use `wt`, `dir` |
+| `set -- $p` / `cmd $args` in zsh | zsh doesn't split unquoted `$var`. Use `${=p}` or pass separate args |
+| Several `hc run` launches in one shell with shared vars | Wrap one launch in a function with `local` vars; call it per worker |
+| `hc send` replied `started: false` | Not delivered (e.g. after sleep). `hc read <t> --lines 20`, then send again |
