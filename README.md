@@ -59,6 +59,7 @@ skills/herdr-coordinator/    SKILL.md, worker-pr.md (worker PR rules), templates
                              scripts/repo-space.py, workers.py, pr-watch.py, install-templates.sh
 .claude-plugin/              plugin.json, marketplace.json
 docs/how-it-works.md         idea + sequence diagram of the coordinator/worker cycle
+tests/                       pr-watch.py tests (python3 -m unittest discover tests)
 ```
 
 ## License
